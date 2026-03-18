@@ -11,10 +11,10 @@ from src.evaluation import IDSEvaluator
 
 def test_model_pipeline():
     print("Testing Complete Model Pipeline (Small Scale)...")
-    file_path = 'Data/DoS_dataset.csv'
+    file_path = 'Data/consolidated_dataset.csv'
     
     # 1. Pipeline: Parse -> Features -> Split
-    chunk_gen = CANParser.load_csv(file_path, chunksize=5000)
+    chunk_gen = CANParser.load_consolidated(file_path, chunksize=5000)
     df = next(chunk_gen)
     df = CANParser.preprocess_df(df)
     df = CANFeatureEngineer.extract_message_features(df)

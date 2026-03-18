@@ -1,5 +1,9 @@
 import pandas as pd
 import numpy as np
+import joblib
+import os
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import StandardScaler
 
 class TelematicsProcessor:
     """
@@ -77,3 +81,69 @@ class BehavioralBaseline:
             anomaly_scores += deviations.astype(int)
             
         return anomaly_scores
+
+class AutoencoderBaseline:
+    """
+    Learns 'normal' behavior using an Autoencoder (MLP-based).
+    Detects anomalies based on high reconstruction error.
+    """
+    
+    def __init__(self, hidden_layer_sizes=(8, 4, 8)):
+        self.scaler = StandardScaler()
+        # We use MLPRegressor as a simple Autoencoder (X -> X)
+        self.model = MLPRegressor(
+            hidden_layer_sizes=hidden_layer_sizes, 
+            activation='relu', 
+            solver='adam', 
+            max_iter=500,
+            random_state=42
+        )
+        self.threshold = 0
+
+    def fit(self, tele_df):
+        """Trains the Autoencoder on normal behavior patterns."""
+        cols = ['Speed', 'RPM', 'Acceleration', 'Braking_Intensity']
+        X = tele_df[cols].values
+        X_scaled = self.scaler.fit_transform(X)
+        
+        # Train to reconstruct itself
+        self.model.fit(X_scaled, X_scaled)
+        
+        # Set threshold based on max reconstruction error in the training set
+        X_pred = self.model.predict(X_scaled)
+        mse = np.mean(np.power(X_scaled - X_pred, 2), axis=1)
+        self.threshold = np.mean(mse) + 3 * np.std(mse) # Mean + 3 Sigma on error
+        print(f"Autoencoder baseline fit. Reconstruction Threshold: {self.threshold:.4f}")
+
+    def detect_anomalies(self, tele_df):
+        """Flags samples where reconstruction error exceeds the threshold."""
+        cols = ['Speed', 'RPM', 'Acceleration', 'Braking_Intensity']
+        X = tele_df[cols].values
+        X_scaled = self.scaler.transform(X)
+        
+        X_pred = self.model.predict(X_scaled)
+        mse = np.mean(np.power(X_scaled - X_pred, 2), axis=1)
+        
+        # 1 for Anomaly, 0 for Normal
+        return (mse > self.threshold).astype(int)
+
+    def save_model(self, file_path):
+        """Serializes the Autoencoder and its configuration."""
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        data = {
+            'model': self.model,
+            'scaler': self.scaler,
+            'threshold': self.threshold
+        }
+        joblib.dump(data, file_path)
+        print(f"Autoencoder model saved to {file_path}")
+
+    @staticmethod
+    def load_model(file_path):
+        """Loads a serialized Autoencoder model."""
+        data = joblib.load(file_path)
+        ae = AutoencoderBaseline()
+        ae.model = data['model']
+        ae.scaler = data['scaler']
+        ae.threshold = data['threshold']
+        return ae

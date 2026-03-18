@@ -13,7 +13,7 @@ def test_deployment_profiling():
     print("Testing Deployment Constraints (Heavy vs. Light Comparison)...")
     
     # 1. Prepare Data
-    chunk_gen = CANParser.load_csv('Data/DoS_dataset.csv', chunksize=10000)
+    chunk_gen = CANParser.load_consolidated('Data/consolidated_dataset.csv', chunksize=10000)
     df = next(chunk_gen)
     df = CANParser.preprocess_df(df)
     df = CANFeatureEngineer.extract_message_features(df)

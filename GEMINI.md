@@ -42,7 +42,23 @@ RPM_dataset	        4,621,702	      3,966,805 	              654,897
  
 normal_run_data	    988,987 	      988,872 	                     -
 
+## Data consolidation
 
+Step:
+
+Merge all into one unified dataset
+
+Add a column:
+
+attack_type = DoS / Fuzzy / Spoofing / Normal
+
+Important:
+
+Keep Timestamp order intact
+
+Normalize column names
+
+store the consolidated data in file
 
 ## Core Mandates & Engineering Standards
 - **Data Privacy:** Handle all vehicle and driver data with extreme care. Ensure privacy-preserving features for location data.
@@ -84,10 +100,10 @@ normal_run_data	    988,987 	      988,872 	                     -
 - **Architecture:** Hybrid edge/cloud detection strategy.
 
 ## Deliverables Checklist
-- [ ] Jupyter Notebook(s) with full pipeline (exploration to analysis).
-- [ ] Trained & Serialized Models (pickle, joblib, or ONNX).
-- [ ] Technical Report (3-5 pages).
-- [ ] vSOC Alert Specification.
+- [x] Jupyter Notebook(s) with full pipeline (exploration to analysis).
+- [x] Trained & Serialized Models (pickle, joblib, or ONNX).
+- [x] Technical Report (3-5 pages).
+- [x] vSOC Alert Specification.
 
 ## Recommended Stack
 - **Data:** pandas, numpy, scikit-learn.

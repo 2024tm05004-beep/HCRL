@@ -58,6 +58,14 @@ class CANParser:
         return chunk_generator()
 
     @staticmethod
+    def load_consolidated(file_path, chunksize=100000):
+        """
+        Loads the consolidated dataset (CSV with header and attack_type column).
+        Yields DataFrames of size chunksize.
+        """
+        return pd.read_csv(file_path, chunksize=chunksize)
+
+    @staticmethod
     def parse_raw_text(file_path, max_lines=None):
         """
         Parses raw text logs (normal_run_data.txt) into a DataFrame.

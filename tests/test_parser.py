@@ -6,24 +6,26 @@ from src.parser import CANParser
 import pandas as pd
 
 def test_csv_parser():
-    print("Testing CSV Parser (DoS Dataset)...")
-    file_path = 'Data/DoS_dataset.csv'
+    print("Testing Consolidated CSV Parser...")
+    file_path = 'Data/consolidated_dataset.csv'
     if not os.path.exists(file_path):
         print(f"File not found: {file_path}")
         return
 
     # Load first chunk
-    chunk_gen = CANParser.load_csv(file_path, chunksize=5)
+    chunk_gen = CANParser.load_consolidated(file_path, chunksize=5)
     df = next(chunk_gen)
     
     print(f"Columns: {df.columns.tolist()}")
     print(f"Sample Row:\n{df.iloc[0]}")
     
     # Assertions
-    assert len(df.columns) == 12, "Incorrect column count"
+    # Consolidated has 13 columns (12 + attack_type)
+    assert len(df.columns) == 13, f"Incorrect column count: {len(df.columns)}"
     assert 'Timestamp' in df.columns
     assert 'Flag' in df.columns
-    print("CSV Parser: PASS\n")
+    assert 'attack_type' in df.columns
+    print("Consolidated CSV Parser: PASS\n")
 
 def test_raw_text_parser():
     print("Testing Raw Text Parser (Normal Run Data)...")

@@ -7,11 +7,11 @@ from src.parser import CANParser
 from src.features import CANFeatureEngineer
 
 def test_feature_extraction():
-    print("Testing Feature Extraction (Small Sample of DoS)...")
-    file_path = 'Data/DoS_dataset.csv'
+    print("Testing Feature Extraction (Small Sample)...")
+    file_path = 'Data/consolidated_dataset.csv'
     
     # 1. Parse small sample
-    chunk_gen = CANParser.load_csv(file_path, chunksize=200)
+    chunk_gen = CANParser.load_consolidated(file_path, chunksize=200)
     df = next(chunk_gen)
     df = CANParser.preprocess_df(df)
     
