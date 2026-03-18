@@ -1,0 +1,78 @@
+# Assignment: Automotive Intrusion Detection - CAN Bus and Telematics Security
+
+## Overview
+Build an intrusion detection system (IDS) for automotive networks combining in-vehicle CAN bus anomaly detection with telematics behavioral monitoring. Leverage publicly available CAN bus datasets and simulated telematics data to develop ML-based detection for attacks targeting modern connected vehicles. Students must understand automotive network architectures, engineer meaningful features from time-series vehicle data, handle the unique characteristics of embedded systems telemetry, and consider deployment constraints in resource-limited automotive environments.
+
+## Problem Statement
+Modern vehicles are distributed embedded systems with dozens of Electronic Control Units (ECUs) communicating over internal networks (primarily CAN bus), connected to cloud services via telematics, and increasingly exposed to external threats. The automotive industry reports a 39% increase in cyber incidents (2023->2024), with 85% of attacks being fully remote. Students must develop detection capabilities that:
+
+1. CAN Bus Intrusion Detection: Detect anomalous message patterns on in-vehicle networks that may indicate injection attacks, replay attacks, or compromised ECUs.
+2. Telematics Behavioral Monitoring: Profile normal vehicle/driver behavior and detect deviations that may indicate compromise or abuse of connected services.
+3. Multi-Layer Correlation: Combine in-vehicle and telematics signals to improve detection confidence.
+4. Edge Deployment Considerations: Design models suitable for resource-constrained automotive compute environments.
+
+## Automotive Security Context
+### Why This Matters
+- Safety-Critical Systems: Unlike IT networks, automotive attacks can affect braking, steering, and acceleration.
+- Scale of Impact: A vulnerability in telematics/OTA can affect millions of vehicles simultaneously.
+- Regulatory Pressure: UN R155/R156 and ISO/SAE 21434 mandate cybersecurity management for vehicle type approval.
+- vSOC Emergence: Vehicle Security Operations Centers need ML-driven analytics for fleet-scale monitoring.
+
+### Architecture Reference
+| Subsystem | Components | Security Relevance |
+| :--- | :--- | :--- |
+| In-Vehicle Networks | CAN/CAN-FD, LIN, Automotive Ethernet, Gateways | Lateral movement, injection attacks |
+| Telematics (V2C) | TCU, cellular modem, OTA systems | Remote access, mass-scale attacks |
+| Infotainment (IVI) | Android/Linux systems, apps, Wi-Fi/BT | Attack surface, pivot point |
+| ADAS | Cameras, radar, perception, planning | Safety-critical, sensor spoofing |
+| External Interfaces | OBD-II, mobile apps, V2X | Entry points for attackers |
+
+## Data Sources
+### Primary Datasets
+- Car Hacking Dataset (HCRL): Hacking and Countermeasure Research Lab
+    - CAN bus traffic from real vehicle with injected attacks
+    - Attack types: DoS, Fuzzing, Gear Spoofing, RPM Spoofing
+    - ~4M CAN messages per attack scenario
+    - Pre-labeled for supervised learning
+- SynCAN Dataset: Synthetic CAN data (ETAS)
+- Survival Analysis Dataset: CAN Intrusion Dataset (Kaggle)
+
+## Simulated/Derived Data for Telematics
+Since real telematics data is proprietary, students should:
+- Derive telematics features from CAN signals (speed, RPM, fuel, location proxy)
+- Generate synthetic fleet profiles with normal/anomalous behavior patterns
+- Use public driving datasets (e.g., comma.ai, nuScenes metadata) for behavioral baselines
+
+## Required Components
+### Part 1: CAN Bus Intrusion Detection (40%)
+1. CAN Protocol Understanding: Parse CAN frames, understand structure/timing, document attack manifestations.
+2. Feature Engineering for CAN: Message-level features (freq, timing, entropy), Sequence features (n-grams), Statistical features, Signal-level features.
+3. Model Development: Train classifiers (RF, XGBoost, lightweight NN), Anomaly detection baseline (Isolation Forest, One-Class SVM), Compare supervised vs unsupervised.
+4. Temporal Analysis: Leverage temporal patterns, implement windowed detection (e.g., 100ms), analyze latency requirements.
+
+### Part 2: Telematics Behavioral Monitoring (30%)
+1. Feature Engineering from Telematics: Driving behavior, Usage patterns, Location patterns, System health.
+2. Behavioral Baseline Model: Train per-vehicle or per-fleet baseline, Define "normal" envelope, Detect deviations.
+3. Anomaly Scenarios: Simulate attack scenarios, Evaluate detection of behavioral anomalies, Balance sensitivity vs false positives.
+
+### Part 3: Multi-Layer Integration (15%)
+1. Correlation Logic: Design how CAN-level alerts and telematics anomalies combine, implement confidence scoring.
+2. vSOC Alert Design: Define alert tiers (informational, suspicious, critical), map to MITRE ATT&CK for automotive.
+3. Fleet-Scale Considerations: Aggregate individual vehicle detections, cross-vehicle correlation for systemic attacks.
+
+### Part 4: Deployment Constraints (15%)
+1. Resource Constraints: Automotive ECUs have limited compute/memory, profile inference time/footprint, compare heavy vs lightweight models.
+2. Real-Time Requirements: CAN messages arrive at high frequency, analyze if model can process at line rate.
+3. Deployment Architecture: Propose where detection should run (gateway, TCU, cloud, hybrid), discuss trade-offs, OTA update path.
+
+## Technical Requirements
+### Evaluation Metrics
+- CAN Intrusion Detection: TPR, FPR, Detection latency, F1-score/Confusion matrix.
+- Telematics Anomaly Detection: Precision/recall, FPR per vehicle-day, Time-to-detect.
+- Deployment Metrics: Inference time, Memory footprint, Throughput.
+
+## Deliverables
+1. Jupyter Notebook(s) with complete implementation.
+2. Trained Models (serialized).
+3. Technical Report (3-5 pages).
+4. vSOC Alert Specification (1 page).

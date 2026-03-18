@@ -1,0 +1,65 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# =========================
+# Jupyter Notebooks
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# Logs & temp files
+# =========================
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+
+# =========================
+# VS Code / Codespaces
+# =========================
+.vscode/
+.devcontainer/
+
+# =========================
+# Data files (IMPORTANT for you)
+# =========================
+Data/
+*.csv
+*.zip
+*.7z
+*.parquet
+*.feather
+
+# =========================
+# Large files
+# =========================
+*.bin
+*.h5
+*.pt
+*.pth
+
+# =========================
+# Cache
+# =========================
+.cache/
