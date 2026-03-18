@@ -6,59 +6,55 @@ Modern vehicles are increasingly connected, software-defined systems comprising 
 With a reported 39% increase in automotive cyber incidents (2023–2024) and 85% of these attacks being remote, protecting the in-vehicle network is critical. Compromise of the CAN bus can lead to unauthorized control over safety-critical functions like braking, steering, and acceleration, posing a direct threat to passenger safety.
 
 ## 2. CAN Analysis & Feature Engineering
-Our system targets three representative attack types from the HCRL dataset:
-1. **DoS Attack:** Overloading the bus with high-priority '0000' CAN IDs.
-2. **Fuzzy Attack:** Injecting random CAN IDs and data payloads to cause unpredictable behavior.
-3. **Spoofing (RPM/Gear):** Injecting targeted messages to deceive the driver or specific ECUs.
+Our system targets three representative attack types from the HCRL dataset: DoS, Fuzzy, and Spoofing.
 
-### Feature Rationale
-To detect these patterns, we implemented a multi-faceted feature extraction pipeline:
-- **Timing Intervals (Delta T):** Detects high-frequency injection (DoS/Fuzzy) by identifying deviations from the expected message periodicity.
-- **Payload Entropy:** Measures randomness in the 8-byte data field. Fuzzy attacks exhibit significantly higher entropy than normal messages.
-- **N-gram Transitions:** Captures sequences of CAN IDs, identifying abnormal transitions typical of spoofing or unauthorized command injections.
-- **Rolling Statistics:** Computes mean/standard deviation of timing to establish a dynamic baseline for network traffic.
+### 2.1 Timing Analysis Visualization
+The primary indicator of a message injection attack is the disruption of the network's natural timing.
+
+![DoS Attack Timing](plots/timing_analysis.png)
+
+**Interpretation:**
+In the plot above (log-scale Delta T), we observe a sharp drop in timing intervals for the `DoS` attack (labeled 'T'). While normal messages (labeled 'R') exhibit a periodic distribution between 10ms and 100ms, the DoS attack injects messages at a highly aggressive 0.3ms interval. This manifests as a distinct horizontal band at the bottom of the chart, representing a high-frequency injection that overwhelms the target ECU's processing buffer.
 
 ## 3. Telematics Behavioral Modeling
-In addition to network-level monitoring, the system implements telematics behavioral profiling. By deriving vehicle speed and engine RPM proxies from CAN signals (IDs `043f` and `0316`), we define a "normal driving envelope."
+The system derives vehicle speed and engine RPM proxies from CAN signals (IDs `043f` and `0316`) to define a "normal driving envelope."
 
-### Behavioral Baseline
-We employed a **3-Sigma Statistical Envelope** approach. By learning the mean and standard deviation of acceleration profiles and braking intensity during normal operation, the system can flag deviations (e.g., sudden unintended acceleration or erratic RPM spikes) that correlate with CAN-level anomalies, significantly reducing false positives.
+### 3.1 Behavioral Envelope Result
+We employed a **3-Sigma Statistical Envelope** to flag erratic driving behavior.
 
-## 4. Detection Results & Performance
-Our evaluation using the HCRL dataset yielded the following results for the **XGBoost-based IDS**:
+![Behavioral Envelope](plots/behavioral_envelope.png)
 
-| Attack Type | TPR (Detection) | FPR (False Alarm) | F1-Score |
-| :--- | :---: | :---: | :---: |
-| DoS Attack | 100.0% | 0.0% | 1.00 |
-| Fuzzy Attack | 99.8% | 0.05% | 0.99 |
-| Spoofing | 98.5% | 0.12% | 0.98 |
+**Interpretation:**
+The plot illustrates the vehicle speed over a 5000-message sample. The green dashed lines represent the learned "Normal Envelope" (Mean ± 3$\sigma$).
+- **Normal Operation:** Most speed points reside comfortably within the bounds.
+- **Anomalies (Red Markers):** The system flags points that exceed these bounds. In an automotive context, this could indicate a "spoofing" attack where the displayed speed is suddenly forced to 0 or MAX, or a "Loss of Control" scenario where the vehicle is forced into erratic acceleration.
 
-### Real-Time Efficiency
-Inference latency was measured on a standard compute node to simulate automotive ECU performance:
-- **Processing Time:** ~1.45ms per 100-message window.
-- **Throughput:** >170,000 Messages Per Second (MPS).
-- **Compliance:** Well within the mandated 20-30ms target, allowing for "line-rate" detection on a 500kbps-1Mbps CAN bus.
+## 4. Model Performance & Detection Accuracy
+The **XGBoost Classifier** was evaluated using a strict temporal split (80/20).
+
+### 4.1 Confusion Matrix Analysis
+The confusion matrix provides a granular view of detection reliability.
+
+![Confusion Matrix](plots/confusion_matrix.png)
+
+**Interpretation:**
+- **True Positives (TP):** High detection rate for DoS injections.
+- **False Positives (FP):** Near-zero False Positives are critical for automotive deployment. A high FPR would lead to "phantom braking" or unnecessary vehicle lockouts, which are themselves a safety hazard. 
+- **Summary:** The model shows high precision, ensuring that only genuine attacks trigger the multi-layer correlation engine.
 
 ## 5. Multi-Layer Integration Strategy
-The core innovation of this system is the **Multi-Layer Correlation** engine. Alerts are categorized into three tiers based on confidence:
-1. **Informational:** Single-source anomaly (e.g., a one-off timing jitter).
-2. **Suspicious:** Confirmed CAN-level attack pattern (e.g., DoS sequence detected).
-3. **Critical:** Overlapping CAN-level attack AND telematics-level behavioral deviation (e.g., Gear spoofing combined with an erratic speed change).
+The core innovation of this system is the **Multi-Layer Correlation** engine. Alerts are categorized based on confidence:
+1. **Critical:** Overlapping CAN anomaly AND behavioral deviation (e.g., Gear spoofing combined with an erratic speed change).
+2. **Suspicious:** Strong CAN-level detection only.
 
-This correlation is mapped to the **MITRE ATT&CK for Automotive** taxonomy, providing vSOC analysts with immediate context (e.g., T0855 for DoS or T0843 for Replay/Spoofing).
+This correlation is mapped to the **MITRE ATT&CK for Automotive** taxonomy (e.g., T0855 for DoS).
 
 ## 6. Deployment Analysis
-We compared a "heavy" model (XGBoost) with a "lightweight" alternative (Shallow Decision Tree):
-
-| Metric | XGBoost (Heavy) | Decision Tree (Light) |
-| :--- | :---: | :---: |
-| Serialized Size | 77.4 KB | 1.9 KB |
-| Peak RAM | 48.1 KB | 166.4 KB |
-| Throughput | 174,730 MPS | 332,003 MPS |
-
-**Recommendation:** For high-performance gateways, XGBoost provides superior precision. For resource-constrained edge ECUs, the Decision Tree offers a highly efficient alternative with minimal footprint.
+Resource profiling confirmed the real-time feasibility of the system:
+- **Throughput:** >170,000 Messages Per Second (MPS).
+- **Latency:** ~1.45ms per 100-message window.
+- **Compliance:** Both XGBoost and Lightweight Decision Trees meet the automotive line-rate requirements (~2000-8000 MPS).
 
 ## 7. Limitations & Future Work
-- **Aggressive Driving:** Sudden maneuvers may trigger false telematics anomalies. Future work should integrate driver-profile-specific baselines.
-- **Mimicry Attacks:** Sophisticated attackers may inject messages at normal frequencies to evade timing-based detection. Sequence-based N-gram analysis is the primary defense here.
-- **Encrypted CAN:** Future automotive architectures (CAN-XL) may use encryption, requiring the IDS to move from payload analysis to header/timing-only analysis.
+- **Mimicry Attacks:** Attackers injecting at normal frequencies require more advanced sequence-based N-gram analysis.
+- **Encryption:** Future transition to CAN-XL will require shifted focus toward header-only timing analysis.
